@@ -300,7 +300,8 @@ export function App() {
         <a className="marca" href="#/presidente" onClick={(e) => (e.preventDefault(), ir({ cargo: 'presidente', uf: null, mun: null }))}>
           <span className="marca-selo">26</span>
           <span>
-            Apuração<small>2º turno · ao vivo</small>
+            Apuração <span className="marca-autor">por Felipe Moreira</span>
+            <small>2º turno · ao vivo</small>
           </span>
         </a>
 

@@ -70,7 +70,10 @@ export function Mapa(p: Props) {
   const [caixa, setCaixa] = useState<Caixa>(CHEIA);
   const [tela, setTela] = useState({ w: LARGURA, h: ALTURA });
   const proporcao = tela.w / tela.h;
-  const [sobre, setSobre] = useState<{ alvo: Alvo; x: number; y: number } | null>(null);
+  // o estado só muda ao trocar de área; a posição da dica vai direto no DOM
+  const [sobre, setSobre] = useState<Alvo | null>(null);
+  const dicaRef = useRef<HTMLDivElement>(null);
+  const posDica = useRef({ x: 0, y: 0 });
   const animacao = useRef(0);
   const atual = useRef<Caixa>(CHEIA);
   const arraste = useRef<{ x: number; y: number; caixa: Caixa; moveu: boolean } | null>(null);
@@ -128,6 +131,11 @@ export function Mapa(p: Props) {
     return [x + (ev.clientX - r.left - ox) / escala, y + (ev.clientY - r.top - oy) / escala, escala] as const;
   }
 
+  function transformDica() {
+    const { x, y } = posDica.current;
+    return `translate(${Math.min(x + 16, (caixaRef.current?.clientWidth ?? 0) - 250)}px, ${y + 16}px)`;
+  }
+
   function alvoDe(el: EventTarget | null): Alvo | null {
     const t = el as SVGElement | null;
     if (!t?.dataset) return null;
@@ -138,8 +146,8 @@ export function Mapa(p: Props) {
 
   const formaSobre = useMemo(() => {
     if (!sobre) return null;
-    if (sobre.alvo.tipo === 'mun') return geo.municipios.find((m) => m.ibge === sobre.alvo.id)?.d;
-    return geo.ufs.find((u) => u.uf === sobre.alvo.id)?.d;
+    if (sobre.tipo === 'mun') return geo.municipios.find((m) => m.ibge === sobre.id)?.d;
+    return geo.ufs.find((u) => u.uf === sobre.id)?.d;
   }, [sobre, geo]);
 
   const formaFoco = useMemo(
@@ -205,7 +213,9 @@ export function Mapa(p: Props) {
           }
           const alvo = alvoDe(e.target);
           const r = caixaRef.current!.getBoundingClientRect();
-          setSobre(alvo ? { alvo, x: e.clientX - r.left, y: e.clientY - r.top } : null);
+          posDica.current = { x: e.clientX - r.left, y: e.clientY - r.top };
+          if (dicaRef.current) dicaRef.current.style.transform = transformDica();
+          if (alvo?.id !== sobre?.id || alvo?.tipo !== sobre?.tipo) setSobre(alvo);
         }}
         onPointerLeave={() => setSobre(null)}
         onPointerUp={(e) => {
@@ -260,8 +270,6 @@ export function Mapa(p: Props) {
 
         <path className="divisas" d={geo.divisasUF} />
         <path className="contorno" d={geo.contorno} />
-        {formaSobre && <path className="realce" d={formaSobre} />}
-        {formaFoco && <path className="realce foco" d={formaFoco} />}
 
         {nacional && p.rotuloUF && (
           <g className="rotulos" style={{ fontSize: 22 * escalaTexto }}>
@@ -336,15 +344,15 @@ export function Mapa(p: Props) {
         )}
       </svg>
 
+      {/* destaques numa camada à parte: mudar o hover não repinta os 5.570 municípios */}
+      <svg className="mapa-sobreposto" viewBox={caixa.join(' ')} aria-hidden>
+        {formaFoco && <path className="realce foco" d={formaFoco} />}
+        {formaSobre && <path className="realce" d={formaSobre} />}
+      </svg>
+
       {sobre && (
-        <div
-          className="dica caixa"
-          style={{
-            left: Math.min(sobre.x + 16, (caixaRef.current?.clientWidth ?? 0) - 250),
-            top: sobre.y + 16,
-          }}
-        >
-          {p.dica(sobre.alvo)}
+        <div ref={dicaRef} className="dica caixa" style={{ transform: transformDica() }}>
+          {p.dica(sobre)}
         </div>
       )}
 

@@ -267,6 +267,10 @@ button.chip-uf:hover {
   text-transform: uppercase;
   color: var(--suave);
 }
+.marca-autor {
+  font: 700 15px var(--fonte);
+  white-space: nowrap;
+}
 .marca-selo {
   display: grid;
   place-items: center;
@@ -924,16 +928,23 @@ button.chip-uf:hover {
   font-weight: 700;
   color: var(--suave);
 }
-.mapa svg {
+.mapa > svg {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   touch-action: none;
   cursor: grab;
   user-select: none;
+  /* camada própria na GPU: o que passa por cima não repinta o mapa */
+  will-change: transform;
 }
-.mapa svg:active {
+.mapa > svg:active {
   cursor: grabbing;
+}
+.mapa > .mapa-sobreposto {
+  pointer-events: none;
 }
 .camada-mun path {
   stroke: color-mix(in srgb, var(--tinta) 14%, transparent);
@@ -947,9 +958,6 @@ button.chip-uf:hover {
   vector-effect: non-scaling-stroke;
   transition: fill 0.4s;
   cursor: pointer;
-}
-.camada-uf path:hover {
-  filter: brightness(0.93);
 }
 .fora-do-foco path {
   fill: var(--fundo);
@@ -1023,7 +1031,11 @@ button.chip-uf:hover {
 
 .dica {
   position: absolute;
+  left: 0;
+  top: 0;
   z-index: 3;
+  will-change: transform;
+  contain: layout style;
   width: 234px;
   padding: 10px 12px;
   pointer-events: none;
@@ -1265,6 +1277,11 @@ button.chip-uf:hover {
   .botao.com-texto {
     width: 40px;
     padding: 0;
+  }
+  .marca-autor {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
   }
   .placar {
     grid-template-columns: minmax(0, 1fr);
